@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Contact</title>
+</head>
+<body>
+    <h2>Edit Contact</h2>
+    <form id="editForm">
+        <label for="firstname">First name</label>
+        <input type="text" name="firstname" id="firstname"><br/>
+        <label for="lastname">Last name</label>
+        <input type="text" name="lastname" id="lastname"><br/>
+        <label for="mobile">Mobile</label>
+        <input type="text" name="mobile" id="mobile"><br/>
+        <label for="email">Email</label>
+        <input type="text" name="email" id="email"><br/>
+        <label for="avatar">Avatar</label>
+        <input type="file" name="avatar" id="avatar"><br/>
+        <!-- Add this inside your <form> where you want the avatar to show -->
+        <img id="avatarPreview" src="default.png" width="100" alt="Current Avatar"><br/>
+        <button type="submit" id="submitForm">Update</button>
+    </form>
+    <br/><br/>
+    <button id="homeLink" type="button">Home</button>
+    <button id="deleteContact" type="button">Delete</button> 
+
+    <script src="config.js"></script>
+    <script>
+        // Get contact ID from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const contactId = urlParams.get('id');
+
+        // Fetch and populate contact data
+        fetch(rootPath + "controller/get-contact/?id=" + contactId, {
+            headers: { "Authorization": apiKey }
+        })
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("firstname").value = data.firstname || "";
+            document.getElementById("lastname").value = data.lastname || "";
+            document.getElementById("mobile").value = data.mobile || "";
+            document.getElementById("email").value = data.email || "";
+            // Show avatar if it exists
+            let avatarImg = document.getElementById("avatarPreview");
+            if(data.avatar){
+                avatarImg.src = rootPath + "controller/uploads/" + data.avatar;
+            } else {
+                avatarImg.src = "default.png"; // fallback image
+            }
+        });
+
+        // Update contact on form submit
+        document.getElementById("editForm").addEventListener('submit', function(e){
+            e.preventDefault();
+            const form = new FormData(document.getElementById('editForm'));
+            form.append('apiKey', apiKey);
+            form.append('id', contactId);
+
+            fetch(rootPath + 'controller/update-contact/', {
+                method: 'POST',
+                body: form
+            })
+            .then(response => response.text())
+            .then(data => {
+                if(data == "1"){
+                    alert("Contact updated");
+                    window.open("index.html", "_self");
+                } else {
+                    alert(data + " - Contact not updated");
+                }
+            });
+        });
+
+        // Home button
+        document.getElementById("homeLink").addEventListener('click', function(){
+            window.open("index.html", "_self");
+        });
+
+        // Delete contact (optional, implement if you have a delete endpoint)
+        document.getElementById("deleteContact").addEventListener('click', function(){
+            if(confirm("Are you sure you want to delete this contact?")){
+                fetch(rootPath + 'controller/delete-contact/', {
+                    method: 'POST',
+                    body: new URLSearchParams({
+                        apiKey: apiKey,
+                        id: contactId
+                    })
+                })
+                .then(response => response.text())
+                .then(data => {
+                    if(data == "1"){
+                        alert("Contact deleted");
+                        window.open("index.html", "_self");
+                    } else {
+                        alert(data + " - Contact not deleted");
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
